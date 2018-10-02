@@ -1,2 +1,2 @@
-from .Strip import StripColor, StripClear
+from .Strip import StripColor
 from .WipeColor import WipeColor

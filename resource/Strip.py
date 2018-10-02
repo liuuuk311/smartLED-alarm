@@ -1,13 +1,13 @@
 from flask_restful import Resource, reqparse
-from utils.Controller import set_color_to_all
+from utils.Controller import set_color_to_all, increase
 
 stripColorParser = reqparse.RequestParser()
-stripColorParser.add_argument('red', required=True)
-stripColorParser.add_argument('green', required=True)
-stripColorParser.add_argument('blue', required=True)
+stripColorParser.add_argument('red', type=int, required=True)
+stripColorParser.add_argument('green', type=int, required=True)
+stripColorParser.add_argument('blue', type=int, required=True)
+stripColorParser.add_argument('density', type=float)
 
 class StripColor(Resource):
-    
     # Set a new color for all leds
     def post(self):
         args = stripColorParser.parse_args()
@@ -15,11 +15,9 @@ class StripColor(Resource):
 
         return {'message': 'New color set'}
 
-stripClearParser = reqparse.RequestParser()
-stripClearParser.add_argument('wipe')
 
-class StripClear(Resource):
-    def get(self):
-        args = stripClearParser.parse_args()
-        print(args)
-        return {'message': 'Strip clear'}
+class StripColorIncrease(Resource):
+    def post(self):
+        args = stripColorParser.parse_args()
+        increase(args['red'], args['green'], args['blue'])
+        return {'message': 'Increased'}
