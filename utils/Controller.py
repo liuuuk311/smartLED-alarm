@@ -35,50 +35,33 @@ def RGB_to_byte(red, green, blue):
    return Color(green, red, blue)
 
 
-def run_set_color_to_all(red, green, blue, density=1.0):
-    # Set all led to red, green and blue. No animations
-    sem.acquire()
+def set_all(red, green, blue, density=1.0, animation=False, animation_speed=0):
+    # Set all led to red, green and blue.
 
-    for led in range(LED_COUNT):
+    led_density = int(LED_COUNT / (LED_COUNT * density))
+
+    for led in range(0, LED_COUNT, led_density):
         if ON_RASPBERRY:
-            strip.setPixelColor(led, RGB_to_byte(red, green, blue))
+            strip.setPixelColor(led, RGB_to_byte(int(red), int(green), int(blue)))
+            if animation:
+                strip.show()
+                time.sleep(animation_speed/1000.0)
 
         if DEBUG:
             print('Set RGB({0}, {1}, {2}) to pixel #{3}'.format(red, green, blue, led))
 
-    if ON_RASPBERRY:
+    if ON_RASPBERRY and not(animation):
         strip.show()
-
-    sem.release()
 
 
 def run_color_wipe(red, green, blue, density=1.0, iterations=1, wait_ms=50):
     # Wipe color across display a pixel at a time.
     sem.acquire()
 
-    led_density = int(LED_COUNT / (LED_COUNT * density))
-
     for times in range(iterations):
 
-        for led in range(0, LED_COUNT, led_density):
-            if ON_RASPBERRY:
-                strip.setPixelColor(led, RGB_to_byte(red, green, blue))
-                strip.show()
-
-            if DEBUG:
-                print('Set RGB({0}, {1}, {2}) to pixel #{3}'.format(red, green, blue, led))
-
-            time.sleep(wait_ms/1000.0)
-
-        for led in range(0, LED_COUNT, led_density):
-            if ON_RASPBERRY:
-                strip.setPixelColor(led, RGB_to_byte(0, 0, 0))
-                strip.show()
-
-            if DEBUG:
-                print('Clearing set RGB(0, 0, 0) to pixel #{0}'.format(led))
-
-            time.sleep(wait_ms/1000.0)
+        set_all(red, green, blue, density=density, animation=True, animation_speed=wait_ms)
+        set_all(0, 0, 0, density=1.0, animation=True, animation_speed=wait_ms)
 
     sem.release()
 
@@ -86,12 +69,12 @@ def run_color_wipe(red, green, blue, density=1.0, iterations=1, wait_ms=50):
 def run_increase(red, green, blue, density=1.0, wait_sec=60):
     sem.acquire()
 
-    led_density = int(LED_COUNT / (LED_COUNT * density))
-
     colors = {'red': red, 'green': green, 'blue': blue}
     order = sorted(colors, key=colors.get) # Min to max
 
     colors_dict = dict(zip(order, [0,0,0]))
+
+
     
     min_v = colors[order[0]]
     mid_v = colors[order[1]]
@@ -100,20 +83,40 @@ def run_increase(red, green, blue, density=1.0, wait_sec=60):
 
     # TODO problema se il minimo e' zero -> division by zero
 
-    for c_min in range(0, min_v+1):
-        colors_dict[order[0]] = c_min
-        colors_dict[order[1]] = int(mid_v/min_v) * colors_dict[order[0]]
-        colors_dict[order[2]] = int(max_v/mid_v) * colors_dict[order[1]]
+    if min_v != 0 and mid_v != 0:
 
-        for led in range(0, LED_COUNT, led_density):
+        for c_min in range(0, min_v+1):
+
+            colors_dict[order[0]] = c_min
+            colors_dict[order[1]] = round((mid_v/min_v) * colors_dict[order[0]])
+            colors_dict[order[2]] = round((max_v/mid_v) * colors_dict[order[1]])
+
+            set_all(colors_dict['red'], colors_dict['green'], colors_dict['blue'], density=density)
+
             if ON_RASPBERRY:
-                strip.setPixelColor(led, RGB_to_byte(colors_dict['red'], colors_dict['green'], colors_dict['blue']))
-                strip.show()
+                time.sleep(wait_sec)
+    elif mid_v != 0:
 
-            if DEBUG:   
-                print('Setting RGB({0}, {1}, {2}) to pixel #{3}'.format(colors_dict['red'], colors_dict['green'], colors_dict['blue'], led))
+        for c_mid in range(0, mid_v+1):
 
-            time.sleep(0.001)
+            colors_dict[order[1]] = c_mid
+            colors_dict[order[2]] = round((max_v/mid_v) * colors_dict[order[1]])
+
+            set_all(colors_dict['red'], colors_dict['green'], colors_dict['blue'], density=density)
+
+            if ON_RASPBERRY:
+                time.sleep(wait_sec)
+
+    else:
+
+        for c_max in range(0, max_v+1):
+
+            colors_dict[order[2]] = c_max
+
+            set_all(colors_dict['red'], colors_dict['green'], colors_dict['blue'], density=density)
+
+            if ON_RASPBERRY:
+                time.sleep(wait_sec)
 
 
     sem.release()
@@ -126,9 +129,6 @@ def color_wipe(red, green, blue, density=1.0, iterations=1, wait_ms=50):
     my_thread = Thread(target=run_color_wipe, args=(red, green, blue, density, iterations, wait_ms))
     my_thread.start()
 
-def set_color_to_all(red, green, blue, density=1.0):
-    my_thread = Thread(target=run_set_color_to_all, args=(red, green, blue, density))
-    my_thread.start()
 
 def increase(red, green, blue, density=1.0):
     my_thread = Thread(target=run_increase, args=(red, green, blue, density))
