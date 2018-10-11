@@ -1,33 +1,32 @@
 from flask_restful import Resource, reqparse
 from utils.Controller import increase, ping_pong, set_all
 
-stripColorParser = reqparse.RequestParser()
-stripColorParser.add_argument('red', type=int, required=True)
-stripColorParser.add_argument('green', type=int, required=True)
-stripColorParser.add_argument('blue', type=int, required=True)
-stripColorParser.add_argument('density', type=float)
-stripColorParser.add_argument('wait', type=float)
+from utils.color_mapper import getRGB
+
+myParser = reqparse.RequestParser()
+myParser.add_argument('color', type=str)
+myParser.add_argument('intensity', type=int)
 
 class StripColor(Resource):
     # Set a new color for all leds
-    def post(self):
-        args = stripColorParser.parse_args()
-        set_all(args['red'], args['green'], args['blue'])
 
-        return {'message': 'New color set'}
+    def post(self):
+        args = myParser.parse_args()
+        
+        rgb_val = getRGB(args['color'])
+        set_all(rgb_val['R'], rgb_val['G'], rgb_val['B'])
+
+        return {'message': rgb_val}
 
 
 class StripColorIncrease(Resource):
     def post(self):
-        args = stripColorParser.parse_args()
+        args = myParser.parse_args()
 
-        increase(args['red'], args['green'], args['blue'])
-        return {'message': 'Increased'}
+        rgb_val = getRGB(args['color'])
+        density_val = float(args['intensity'])/10
 
+        set_all(0,0,0) # Clean
+        set_all(rgb_val['R'], rgb_val['G'], rgb_val['B'], density=density_val, animation=True, animation_speed=15)
 
-class StripColorPingPong(Resource):
-    def post(self):
-        args = stripColorParser.parse_args()
-
-        ping_pong(args['red'], args['green'], args['blue'])
-        return {'message': 'Ping pong'}
+        return {'message': rgb_val}
