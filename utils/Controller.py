@@ -4,11 +4,11 @@ from threading import Thread, Semaphore
 # Semaphore on the LED strip
 sem = Semaphore()
 
-ON_RASPBERRY = False
+ON_RASPBERRY = True
 DEBUG = True
 
 # LED strip configuration:
-LED_COUNT = 16      # Number of LED pixels.
+LED_COUNT = 60     # Number of LED pixels.
 LED_PIN = 18      # GPIO pin connected to the pixels (18 uses PWM!).
 #LED_PIN        = 10      # GPIO pin connected to the pixels (10 uses SPI /dev/spidev0.0).
 LED_FREQ_HZ = 800000  # LED signal frequency in hertz (usually 800khz)
@@ -17,6 +17,8 @@ LED_BRIGHTNESS = 255     # Set to 0 for darkest and 255 for brightest
 # True to invert the signal (when using NPN transistor level shift)
 LED_INVERT = False
 LED_CHANNEL = 0       # set to '1' for GPIOs 13, 19, 41, 45 or 53
+
+
 
 
 if ON_RASPBERRY:
@@ -29,11 +31,9 @@ if ON_RASPBERRY:
     strip.begin()
 
 
-# Helper
 def RGB_to_byte(red, green, blue):
    # Workaround for bug in Color from Neopixel
    return Color(green, red, blue)
-
 
 def set_all(red, green, blue, density=1.0, animation=False, animation_speed=0):
     # Set all led to red, green and blue.
@@ -66,7 +66,7 @@ def run_color_wipe(red, green, blue, density=1.0, iterations=1, wait_ms=50):
     sem.release()
 
 
-def run_increase(red, green, blue, density=1.0, wait_sec=60):
+def run_increase(red, green, blue, density=1.0, wait_sec=5):
     sem.acquire()
 
     colors = {'red': red, 'green': green, 'blue': blue}
@@ -74,14 +74,9 @@ def run_increase(red, green, blue, density=1.0, wait_sec=60):
 
     colors_dict = dict(zip(order, [0,0,0]))
 
-
-    
     min_v = colors[order[0]]
     mid_v = colors[order[1]]
     max_v = colors[order[2]]
-
-
-    # TODO problema se il minimo e' zero -> division by zero
 
     if min_v != 0 and mid_v != 0:
 
@@ -122,6 +117,37 @@ def run_increase(red, green, blue, density=1.0, wait_sec=60):
     sem.release()
 
 
+def run_ping_pong(red, green, blue, how_many=1, speed_ms=10, iterations=1):
+    for led in range(LED_COUNT):
+        if ON_RASPBERRY:
+            strip.setPixelColor(led, RGB_to_byte(int(red), int(green), int(blue)))
+            time.sleep(speed_ms/1000.0)
+            
+
+            if led + 1 > how_many:
+                strip.setPixelColor(led+1-how_many, RGB_to_byte(0, 0, 0))
+
+            strip.show()
+
+        if DEBUG:
+            print('Set RGB({0}, {1}, {2}) to pixel #{3}'.format(red, green, blue, led))
+            time.sleep(speed_ms/1000.0)
+            print('Clear RGB(0, 0, 0) to pixel #{0}'.format(led+1-how_many))
+
+    for led in reversed(range(LED_COUNT)):
+        if ON_RASPBERRY:
+            strip.setPixelColor(led, RGB_to_byte(int(red), int(green), int(blue)))
+            time.sleep(speed_ms/1000.0)
+
+            if led - 1 > how_many:
+                strip.setPixelColor(led-1+how_many, RGB_to_byte(0, 0, 0))
+
+            strip.show()
+
+        if DEBUG:
+            print('Set RGB({0}, {1}, {2}) to pixel #{3}'.format(red, green, blue, led))
+            time.sleep(speed_ms/1000.0)
+            print('Clear RGB(0, 0, 0) to pixel #{0}'.format(led-1+how_many))
 
 
 
@@ -130,6 +156,16 @@ def color_wipe(red, green, blue, density=1.0, iterations=1, wait_ms=50):
     my_thread.start()
 
 
-def increase(red, green, blue, density=1.0):
-    my_thread = Thread(target=run_increase, args=(red, green, blue, density))
+def increase(red, green, blue, density=1.0, wait_sec=5):
+    my_thread = Thread(target=run_increase, args=(red, green, blue, density, wait_sec))
     my_thread.start()
+
+def ping_pong(red, green, blue, how_many=1, speed_ms=10):
+    my_thread = Thread(target=run_ping_pong, args=(red, green, blue, how_many, speed_ms))
+    my_thread.start()
+
+
+
+
+if __name__ == "__main__":
+    ping_pong(2,2,2)
