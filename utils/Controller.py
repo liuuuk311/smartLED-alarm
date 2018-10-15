@@ -80,8 +80,9 @@ def run_increase(red, green, blue, density=1.0, wait_sec=5):
 
     if min_v != 0 and mid_v != 0:
 
-        for c_min in range(0, min_v+1):
-
+        print(min_v)
+        for c_min in range(0, int(min_v)+1):
+            print(c_min)
             colors_dict[order[0]] = c_min
             colors_dict[order[1]] = round((mid_v/min_v) * colors_dict[order[0]])
             colors_dict[order[2]] = round((max_v/mid_v) * colors_dict[order[1]])
@@ -92,7 +93,7 @@ def run_increase(red, green, blue, density=1.0, wait_sec=5):
                 time.sleep(wait_sec)
     elif mid_v != 0:
 
-        for c_mid in range(0, mid_v+1):
+        for c_mid in range(0, int(mid_v)+1):
 
             colors_dict[order[1]] = c_mid
             colors_dict[order[2]] = round((max_v/mid_v) * colors_dict[order[1]])
@@ -104,7 +105,7 @@ def run_increase(red, green, blue, density=1.0, wait_sec=5):
 
     else:
 
-        for c_max in range(0, max_v+1):
+        for c_max in range(0, int(max_v)+1):
 
             colors_dict[order[2]] = c_max
 
@@ -152,7 +153,7 @@ def run_ping_pong(red, green, blue, how_many=1, speed_ms=10, iterations=1):
 
 
 def color_wipe(red, green, blue, density=1.0, iterations=1, wait_ms=50):
-    my_thread = Thread(target=run_color_wipe, args=(red, green, blue, density, iterations, wait_ms))
+    my_thread = Thread(name='color-wipe', target=run_color_wipe, args=(red, green, blue, density, iterations, wait_ms))
     my_thread.start()
 
 

@@ -7,14 +7,16 @@ cwd = os.getcwd()
 
 print('Color Mapper' + cwd)
 
-with open('utils/colors.json') as f:
-    data = json.load(f)
+
     
 
-def getRGB(color):
+def getRGB(color, intensity=1):
     color = color.split()[0].strip().capitalize()
-
-    if color in data.keys():
-        return data[color]
-    else:
-        return data["Black"]
+    with open('utils/colors.json') as f:
+        data = json.load(f)
+        if color in data.keys():
+            copy = data[color]
+            copy.update((x, int(y)*int(intensity)) for x, y in copy.items())
+            return copy
+        else:
+            return data["Black"]
