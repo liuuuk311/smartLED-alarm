@@ -1,5 +1,5 @@
 # Smart LED Alarm
-A Raspberry Pi synced with my Fitbit sleep data to control a LED strip.
+A Raspberry Pi synced with my Fitbit sleep data to control a LED strip with vocal controls through Google Assistant.
 
 ### Idea
 - RESTful APIs to control the LED strip
